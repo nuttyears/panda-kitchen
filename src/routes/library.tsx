@@ -6,7 +6,7 @@ import { actions, useHydrate, useStore } from "@/lib/store";
 import type { MacroTag } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, ChefHat, UtensilsCrossed, Star, Home } from "lucide-react";
+import { Plus, Trash2, Star, Home } from "lucide-react";
 import {
   Dialog,
   DialogContent,
