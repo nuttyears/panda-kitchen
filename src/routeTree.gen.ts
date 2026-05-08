@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as GroceryRouteImport } from './routes/grocery'
 import { Route as IndexRouteImport } from './routes/index'
 
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroceryRoute = GroceryRouteImport.update({
+  id: '/grocery',
+  path: '/grocery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/grocery': typeof GroceryRoute
+  '/insights': typeof InsightsRoute
+  '/library': typeof LibraryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/grocery': typeof GroceryRoute
+  '/insights': typeof InsightsRoute
+  '/library': typeof LibraryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/grocery': typeof GroceryRoute
+  '/insights': typeof InsightsRoute
+  '/library': typeof LibraryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/grocery' | '/insights' | '/library'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/grocery' | '/insights' | '/library'
+  id: '__root__' | '/' | '/grocery' | '/insights' | '/library'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GroceryRoute: typeof GroceryRoute
+  InsightsRoute: typeof InsightsRoute
+  LibraryRoute: typeof LibraryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grocery': {
+      id: '/grocery'
+      path: '/grocery'
+      fullPath: '/grocery'
+      preLoaderRoute: typeof GroceryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +104,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GroceryRoute: GroceryRoute,
+  InsightsRoute: InsightsRoute,
+  LibraryRoute: LibraryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
