@@ -1,10 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { CalendarDays, BookOpen, ShoppingBasket, Sparkles } from "lucide-react";
+import { CalendarDays, BookOpen, ShoppingBasket, Sparkles, Home } from "lucide-react";
 import type { ReactNode } from "react";
 import pandaLogo from "@/assets/panda-logo.png";
 
 const navItems = [
-  { to: "/", label: "Plan", icon: CalendarDays },
+  { to: "/", label: "Home", icon: Home },
+  { to: "/plan", label: "Plan", icon: CalendarDays },
   { to: "/library", label: "Library", icon: BookOpen },
   { to: "/grocery", label: "Grocery", icon: ShoppingBasket },
   { to: "/insights", label: "Insights", icon: Sparkles },
@@ -33,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-2xl px-5 pt-4">{children}</main>
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur border-t border-border">
-        <div className="mx-auto max-w-2xl grid grid-cols-4">
+        <div className="mx-auto max-w-2xl grid grid-cols-5">
           {navItems.map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
             return (

@@ -1,289 +1,230 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { MealEditor } from "@/components/MealEditor";
 import { TagChip } from "@/components/TagChip";
 import {
-  actions,
   addDays,
   getMealName,
   getMealTags,
-  mealSignature,
   planKey,
   startOfWeek,
   useHydrate,
   useStore,
 } from "@/lib/store";
-import { ChefHat, UtensilsCrossed, Plus, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, CalendarCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  ChefHat,
+  UtensilsCrossed,
+  Plus,
+  CalendarDays,
+  BookOpen,
+  ShoppingBasket,
+  Sparkles,
+  ArrowRight,
+  Store,
+} from "lucide-react";
 import type { MacroTag, SlotKey } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "tabletop — Plan the week" },
-      { name: "description", content: "Plan family dinners and school lunches without the weeknight scramble." },
-      { property: "og:title", content: "tabletop — Family meal planning" },
-      { property: "og:description", content: "Cook or takeout, kid-approved, balance-aware. One calm weekly plan." },
+      { title: "Home — Panda's Kitchen" },
+      { name: "description", content: "Today's menu at a glance, plus quick access to your library, grocery list, and insights." },
+      { property: "og:title", content: "Home — Panda's Kitchen" },
+      { property: "og:description", content: "Today's menu at a glance, plus quick access to your library, grocery list, and insights." },
     ],
   }),
-  component: PlannerPage,
+  component: HomePage,
 });
 
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SLOTS: { key: SlotKey; label: string; Icon: typeof ChefHat }[] = [
   { key: "lunch", label: "School lunch", Icon: UtensilsCrossed },
   { key: "dinner", label: "Dinner", Icon: ChefHat },
 ];
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function PlannerPage() {
+function HomePage() {
   useHydrate();
+  // Defer date-dependent UI to client to avoid SSR/CSR hydration mismatches
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const plan = useStore((s) => s.plan);
   const dishes = useStore((s) => s.dishes);
   const restaurants = useStore((s) => s.restaurants);
-  const threshold = useStore((s) => s.repeatThreshold);
 
-  const [weekOffset, setWeekOffset] = useState(0);
-  const weekStart = useMemo(() => addDays(startOfWeek(), weekOffset * 7), [weekOffset]);
   const [editing, setEditing] = useState<{ key: string; day: string; slot: string } | null>(null);
 
-  // repeat counts per signature within visible week
-  const sigCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (let i = 0; i < 7; i++) {
-      for (const slot of SLOTS) {
-        const m = plan[planKey(weekStart, i, slot.key)];
-        if (!m) continue;
-        const sig = mealSignature(m);
-        counts.set(sig, (counts.get(sig) ?? 0) + 1);
-      }
-    }
-    return counts;
-  }, [plan, weekStart]);
-
-  const summary = useMemo(() => {
-    let cook = 0, takeout = 0, balanced = 0, total = 0;
-    for (let i = 0; i < 7; i++) {
-      for (const slot of SLOTS) {
-        const m = plan[planKey(weekStart, i, slot.key)];
-        if (!m) continue;
-        total++;
-        if (m.mode === "cook") cook++;
-        else takeout++;
-        const tags = getMealTags(m, dishes, restaurants);
-        if (tags.has("protein") && tags.has("veggie") && tags.has("fruit")) balanced++;
-      }
-    }
-    return { cook, takeout, balanced, total };
-  }, [plan, weekStart, dishes, restaurants]);
+  const today = useMemo(() => new Date(), [mounted]);
+  const weekStart = useMemo(() => startOfWeek(today), [today]);
+  const dayIdx = useMemo(() => {
+    const d = new Date(today);
+    d.setHours(0, 0, 0, 0);
+    return Math.round((d.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+  }, [today, weekStart]);
 
   const editingMeal = editing ? plan[editing.key] : undefined;
 
-  const todayDate = useMemo(() => new Date(), []);
-  const todayWeekStart = useMemo(() => startOfWeek(todayDate), [todayDate]);
-  const todayDayIdx = useMemo(() => {
-    const d = new Date(todayDate);
-    d.setHours(0, 0, 0, 0);
-    return Math.round((d.getTime() - todayWeekStart.getTime()) / (1000 * 60 * 60 * 24));
-  }, [todayDate, todayWeekStart]);
-  const todayDinnerKey = planKey(todayWeekStart, todayDayIdx, "dinner");
-  const todayDinnerMeal = plan[todayDinnerKey];
-  const todayDinnerName = todayDinnerMeal
-    ? getMealName(todayDinnerMeal, dishes, restaurants)
-    : null;
-
-  const jumpToToday = () => {
-    setWeekOffset(0);
-    requestAnimationFrame(() => {
-      document.getElementById("day-today")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  };
-  const planTodayDinner = () => {
-    setWeekOffset(0);
-    setEditing({
-      key: todayDinnerKey,
-      day: DAY_NAMES[todayDate.getDay()],
-      slot: "Dinner",
-    });
-  };
+  const cookCount = dishes.length;
+  const restaurantCount = restaurants.length;
 
   return (
     <AppShell>
-      <section className="mb-6">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">This week</p>
-            <h1 className="font-display text-4xl mt-1 leading-none">
-              {weekStart.toLocaleDateString(undefined, { month: "long", day: "numeric" })}
-            </h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+      {/* Greeting */}
+      <section className="mb-5 mt-1">
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+          {mounted ? today.toLocaleDateString(undefined, { weekday: "long" }) : "\u00A0"}
+        </p>
+        <h1 className="font-display text-4xl mt-1 leading-none">Today's menu</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          {mounted
+            ? today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })
+            : "\u00A0"}
+        </p>
+      </section>
+
+      {/* Today's meal cards */}
+      <section className="space-y-3">
+        {SLOTS.map((slot) => {
+          const key = mounted ? planKey(weekStart, dayIdx, slot.key) : "";
+          const meal = mounted ? plan[key] : undefined;
+          const tags = meal ? getMealTags(meal, dishes, restaurants) : new Set<string>();
+          return (
             <button
-              onClick={jumpToToday}
-              className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted"
+              key={slot.key}
+              disabled={!mounted}
+              onClick={() =>
+                setEditing({
+                  key,
+                  day: DAY_NAMES[today.getDay()],
+                  slot: slot.label,
+                })
+              }
+              className="w-full text-left rounded-2xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-[0_8px_30px_-12px_color-mix(in_oklab,var(--primary)_25%,transparent)] transition group"
             >
-              Today
+              <div className="flex items-start gap-3">
+                <div
+                  className="h-11 w-11 rounded-xl grid place-items-center shrink-0"
+                  style={{
+                    background: meal
+                      ? meal.mode === "cook"
+                        ? "color-mix(in oklab, var(--cook) 15%, transparent)"
+                        : "color-mix(in oklab, var(--takeout) 15%, transparent)"
+                      : "var(--muted)",
+                    color: meal
+                      ? meal.mode === "cook"
+                        ? "var(--cook)"
+                        : "var(--takeout)"
+                      : "var(--muted-foreground)",
+                  }}
+                >
+                  {meal ? (
+                    meal.mode === "cook" ? <ChefHat className="h-5 w-5" /> : <UtensilsCrossed className="h-5 w-5" />
+                  ) : (
+                    <Plus className="h-5 w-5" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {slot.label}
+                  </div>
+                  <div className="mt-0.5 font-display text-xl leading-snug">
+                    {meal ? (
+                      getMealName(meal, dishes, restaurants)
+                    ) : (
+                      <span className="text-muted-foreground font-sans text-base font-normal">
+                        Not planned — tap to plan
+                      </span>
+                    )}
+                  </div>
+                  {meal && (
+                    <div className="mt-2 flex gap-1 flex-wrap">
+                      {(["protein", "veggie", "fruit"] as MacroTag[]).map((t) => (
+                        <TagChip key={t} tag={t} small muted={!tags.has(t)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition mt-1" />
+              </div>
             </button>
-            <Button variant="ghost" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+          );
+        })}
+      </section>
 
-        <button
-          onClick={planTodayDinner}
-          className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-primary text-primary-foreground px-4 py-3.5 shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
-        >
-          <span className="flex items-center gap-2.5">
-            <CalendarCheck className="h-5 w-5" />
-            <span className="text-left">
-              <span className="block text-[10px] uppercase tracking-wider opacity-80">
-                {todayDate.toLocaleDateString(undefined, { weekday: "long" })} · today
-              </span>
-              <span className="font-display text-lg leading-tight">
-                {todayDinnerName ?? "Plan tonight's dinner"}
-              </span>
-            </span>
-          </span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-primary-foreground/15">
-            {todayDinnerName ? "Edit" : "Plan"}
-          </span>
-        </button>
-
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <SummaryStat label="Cooked" value={summary.cook} accent="var(--cook)" />
-          <SummaryStat label="Takeout" value={summary.takeout} accent="var(--takeout)" />
-          <SummaryStat
-            label="Balanced"
-            value={summary.total ? `${Math.round((summary.balanced / summary.total) * 100)}%` : "—"}
-            accent="var(--accent)"
+      {/* Quick actions */}
+      <section className="mt-8">
+        <h2 className="font-display text-lg mb-3">Jump to</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <ShortcutCard
+            to="/plan"
+            label="Week plan"
+            hint="See all 7 days"
+            Icon={CalendarDays}
+            tone="primary"
+          />
+          <ShortcutCard
+            to="/grocery"
+            label="Grocery list"
+            hint="Auto from your plan"
+            Icon={ShoppingBasket}
+            tone="cook"
+          />
+          <ShortcutCard
+            to="/insights"
+            label="Insights"
+            hint="Cook vs takeout, balance"
+            Icon={Sparkles}
+            tone="accent"
+          />
+          <ShortcutCard
+            to="/library"
+            label="Library"
+            hint="Edit dishes & restaurants"
+            Icon={BookOpen}
+            tone="takeout"
           />
         </div>
       </section>
 
-      <div className="space-y-3">
-        {Array.from({ length: 7 }).map((_, dayIdx) => {
-          const date = addDays(weekStart, dayIdx);
-          const isToday = new Date().toDateString() === date.toDateString();
-          return (
-            <article
-              key={dayIdx}
-              id={isToday ? "day-today" : undefined}
-              className={`rounded-2xl border bg-card overflow-hidden ${
-                isToday ? "border-primary/60 shadow-[0_8px_30px_-12px_color-mix(in_oklab,var(--primary)_30%,transparent)]" : "border-border"
-              }`}
-            >
-              <header className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-display text-2xl">{DAY_NAMES[date.getDay()]}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </span>
-                  {isToday && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">today</span>
-                  )}
-                </div>
-              </header>
-              <div className="divide-y divide-border/60">
-                {SLOTS.map((slot) => {
-                  const key = planKey(weekStart, dayIdx, slot.key);
-                  const meal = plan[key];
-                  const tags = meal ? getMealTags(meal, dishes, restaurants) : new Set<string>();
-                  const repeatCount = meal ? sigCounts.get(mealSignature(meal)) ?? 0 : 0;
-                  const repeated = repeatCount >= threshold + 1;
-                  const balanced =
-                    meal && tags.has("protein") && tags.has("veggie") && tags.has("fruit");
-                  return (
-                    <button
-                      key={slot.key}
-                      onClick={() =>
-                        setEditing({ key, day: DAY_NAMES[date.getDay()], slot: slot.label })
-                      }
-                      className="w-full text-left px-4 py-3 hover:bg-muted/40 transition group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="mt-0.5 h-8 w-8 rounded-lg grid place-items-center shrink-0"
-                          style={{
-                            background: meal
-                              ? meal.mode === "cook"
-                                ? "color-mix(in oklab, var(--cook) 15%, transparent)"
-                                : "color-mix(in oklab, var(--takeout) 15%, transparent)"
-                              : "var(--muted)",
-                            color: meal
-                              ? meal.mode === "cook"
-                                ? "var(--cook)"
-                                : "var(--takeout)"
-                              : "var(--muted-foreground)",
-                          }}
-                        >
-                          {meal ? (
-                            meal.mode === "cook" ? (
-                              <ChefHat className="h-4 w-4" />
-                            ) : (
-                              <UtensilsCrossed className="h-4 w-4" />
-                            )
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                              {slot.label}
-                            </span>
-                            {balanced && (
-                              <CheckCircle2 className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />
-                            )}
-                            {repeated && (
-                              <span
-                                className="inline-flex items-center gap-1 text-[10px] font-medium"
-                                style={{ color: "var(--warn)" }}
-                              >
-                                <AlertTriangle className="h-3 w-3" /> repeats {repeatCount}×
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-0.5 text-[15px] font-medium leading-snug">
-                            {meal ? getMealName(meal, dishes, restaurants) : (
-                              <span className="text-muted-foreground font-normal">Tap to plan</span>
-                            )}
-                          </div>
-                          {meal && (
-                            <div className="mt-1.5 flex gap-1 flex-wrap">
-                              {(["protein", "veggie", "fruit"] as MacroTag[]).map((t) => (
-                                <TagChip key={t} tag={t} small muted={!tags.has(t)} />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      {/* Library quick edit */}
+      <section className="mt-8 mb-4">
+        <div className="flex items-end justify-between mb-3">
+          <h2 className="font-display text-lg">Your library</h2>
+          <Link
+            to="/library"
+            className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+          >
+            Manage all
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            to="/library"
+            className="rounded-2xl border border-border bg-card p-4 hover:border-primary/40 transition"
+          >
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <ChefHat className="h-3.5 w-3.5" />
+              Home-cooked
+            </div>
+            <div className="mt-2 font-display text-3xl">{cookCount}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">dishes</div>
+          </Link>
+          <Link
+            to="/library"
+            className="rounded-2xl border border-border bg-card p-4 hover:border-primary/40 transition"
+          >
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <Store className="h-3.5 w-3.5" />
+              Takeout
+            </div>
+            <div className="mt-2 font-display text-3xl">{restaurantCount}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">restaurants</div>
+          </Link>
+        </div>
+      </section>
 
-      <div className="mt-8 mb-2 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          Repeat warning when a meal appears more than {threshold}×
-        </p>
-        <button
-          onClick={() => actions.setThreshold(threshold === 2 ? 1 : 2)}
-          className="text-xs underline-offset-4 hover:underline text-muted-foreground"
-        >
-          Tighten
-        </button>
-      </div>
-
-      {editing && (
+      {editing && mounted && (
         <MealEditor
           open={!!editing}
           onOpenChange={(v) => !v && setEditing(null)}
@@ -297,16 +238,36 @@ function PlannerPage() {
   );
 }
 
-function SummaryStat({ label, value, accent }: { label: string; value: string | number; accent: string }) {
+function ShortcutCard({
+  to,
+  label,
+  hint,
+  Icon,
+  tone,
+}: {
+  to: "/plan" | "/grocery" | "/insights" | "/library";
+  label: string;
+  hint: string;
+  Icon: typeof CalendarDays;
+  tone: "primary" | "accent" | "cook" | "takeout";
+}) {
+  const color = `var(--${tone})`;
   return (
-    <div
-      className="rounded-xl border border-border/70 bg-card px-3 py-2.5"
-      style={{ boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${accent} 8%, transparent)` }}
+    <Link
+      to={to}
+      className="rounded-2xl border border-border bg-card p-4 hover:border-primary/40 transition group"
     >
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="font-display text-2xl mt-0.5" style={{ color: accent }}>
-        {value}
+      <div
+        className="h-9 w-9 rounded-xl grid place-items-center"
+        style={{
+          background: `color-mix(in oklab, ${color} 15%, transparent)`,
+          color,
+        }}
+      >
+        <Icon className="h-5 w-5" />
       </div>
-    </div>
+      <div className="mt-3 font-display text-lg leading-tight">{label}</div>
+      <div className="text-xs text-muted-foreground mt-0.5">{hint}</div>
+    </Link>
   );
 }
