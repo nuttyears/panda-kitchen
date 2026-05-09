@@ -217,8 +217,8 @@ function PlannerPage() {
                 </div>
               </header>
               <div className="divide-y divide-border/60">
-                {SLOTS.map((slot) => {
-                  const key = planKey(weekStart, dayIdx, slot.key);
+                {slotsForDay(dayIdx).map((slot) => {
+                  const key = planKey(weekStart, slot.targetDayIdx, slot.key);
                   const meal = plan[key];
                   const tags = meal ? getMealTags(meal, dishes, restaurants) : new Set<string>();
                   const repeatCount = meal ? sigCounts.get(mealSignature(meal)) ?? 0 : 0;
@@ -229,7 +229,7 @@ function PlannerPage() {
                     <button
                       key={slot.key}
                       onClick={() =>
-                        setEditing({ key, day: DAY_NAMES[date.getDay()], slot: slot.label })
+                        setEditing({ key, day: DAY_NAMES_LONG[date.getDay()], slot: slot.label })
                       }
                       className="w-full text-left px-4 py-3 hover:bg-muted/40 transition group"
                     >
