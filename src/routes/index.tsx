@@ -172,6 +172,7 @@ function PlannerPage() {
           return (
             <article
               key={dayIdx}
+              id={isToday ? "day-today" : undefined}
               className={`rounded-2xl border bg-card overflow-hidden ${
                 isToday ? "border-primary/60 shadow-[0_8px_30px_-12px_color-mix(in_oklab,var(--primary)_30%,transparent)]" : "border-border"
               }`}
