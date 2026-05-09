@@ -80,6 +80,34 @@ function PlannerPage() {
 
   const editingMeal = editing ? plan[editing.key] : undefined;
 
+  const todayDate = useMemo(() => new Date(), []);
+  const todayWeekStart = useMemo(() => startOfWeek(todayDate), [todayDate]);
+  const todayDayIdx = useMemo(() => {
+    const d = new Date(todayDate);
+    d.setHours(0, 0, 0, 0);
+    return Math.round((d.getTime() - todayWeekStart.getTime()) / (1000 * 60 * 60 * 24));
+  }, [todayDate, todayWeekStart]);
+  const todayDinnerKey = planKey(todayWeekStart, todayDayIdx, "dinner");
+  const todayDinnerMeal = plan[todayDinnerKey];
+  const todayDinnerName = todayDinnerMeal
+    ? getMealName(todayDinnerMeal, dishes, restaurants)
+    : null;
+
+  const jumpToToday = () => {
+    setWeekOffset(0);
+    requestAnimationFrame(() => {
+      document.getElementById("day-today")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+  const planTodayDinner = () => {
+    setWeekOffset(0);
+    setEditing({
+      key: todayDinnerKey,
+      day: DAY_NAMES[todayDate.getDay()],
+      slot: "Dinner",
+    });
+  };
+
   return (
     <AppShell>
       <section className="mb-6">
