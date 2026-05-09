@@ -38,10 +38,29 @@ export const Route = createFileRoute("/")({
 });
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const SLOTS: { key: SlotKey; label: string; Icon: typeof ChefHat }[] = [
-  { key: "lunch", label: "School lunch", Icon: UtensilsCrossed },
-  { key: "dinner", label: "Dinner", Icon: ChefHat },
-];
+
+// Slots to prep tonight, in cooking order: tonight's dinner first,
+// then tomorrow's school lunch (only if tomorrow is a school day, Mon–Fri).
+function tonightSlots(todayDayOfWeek: number): Array<{
+  key: SlotKey;
+  label: string;
+  Icon: typeof ChefHat;
+  dayOffset: number; // 0 = today, 1 = tomorrow
+}> {
+  const slots: Array<{ key: SlotKey; label: string; Icon: typeof ChefHat; dayOffset: number }> = [
+    { key: "dinner", label: "Tonight's dinner", Icon: ChefHat, dayOffset: 0 },
+  ];
+  const tomorrowDow = (todayDayOfWeek + 1) % 7;
+  if (tomorrowDow >= 1 && tomorrowDow <= 5) {
+    slots.push({
+      key: "lunch",
+      label: `${DAY_NAMES[tomorrowDow]}'s school lunch`,
+      Icon: UtensilsCrossed,
+      dayOffset: 1,
+    });
+  }
+  return slots;
+}
 
 function HomePage() {
   useHydrate();
@@ -75,7 +94,7 @@ function HomePage() {
         <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           {mounted ? today.toLocaleDateString(undefined, { weekday: "long" }) : "\u00A0"}
         </p>
-        <h1 className="font-display text-4xl mt-1 leading-none">Today's menu</h1>
+        <h1 className="font-display text-4xl mt-1 leading-none">Tonight's prep</h1>
         <p className="text-sm text-muted-foreground mt-1.5">
           {mounted
             ? today.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })
@@ -83,21 +102,22 @@ function HomePage() {
         </p>
       </section>
 
-      {/* Today's meal cards */}
+      {/* Tonight's cooking: dinner first, then tomorrow's school lunch (if school day) */}
       <section className="space-y-3">
-        {SLOTS.map((slot) => {
-          const key = mounted ? planKey(weekStart, dayIdx, slot.key) : "";
-          const meal = mounted ? plan[key] : undefined;
+        {(mounted ? tonightSlots(today.getDay()) : []).map((slot) => {
+          const targetDayIdx = dayIdx + slot.dayOffset;
+          const key = planKey(weekStart, targetDayIdx, slot.key);
+          const meal = plan[key];
           const tags = meal ? getMealTags(meal, dishes, restaurants) : new Set<string>();
+          const targetDow = (today.getDay() + slot.dayOffset) % 7;
           return (
             <button
               key={slot.key}
-              disabled={!mounted}
               onClick={() =>
                 setEditing({
                   key,
-                  day: DAY_NAMES[today.getDay()],
-                  slot: slot.label,
+                  day: DAY_NAMES[targetDow],
+                  slot: slot.key === "dinner" ? "Dinner" : "School lunch",
                 })
               }
               className="w-full text-left rounded-2xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-[0_8px_30px_-12px_color-mix(in_oklab,var(--primary)_25%,transparent)] transition group"
