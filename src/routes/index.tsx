@@ -14,7 +14,7 @@ import {
   useHydrate,
   useStore,
 } from "@/lib/store";
-import { ChefHat, UtensilsCrossed, Plus, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Plus, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MacroTag, SlotKey } from "@/lib/types";
 
@@ -95,7 +95,7 @@ function PlannerPage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <button
-              onClick={() => setWeekOffset(0)}
+              onClick={jumpToToday}
               className="text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted"
             >
               Today
@@ -106,7 +106,27 @@ function PlannerPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <button
+          onClick={planTodayDinner}
+          className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-primary text-primary-foreground px-4 py-3.5 shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
+        >
+          <span className="flex items-center gap-2.5">
+            <CalendarCheck className="h-5 w-5" />
+            <span className="text-left">
+              <span className="block text-[10px] uppercase tracking-wider opacity-80">
+                {todayDate.toLocaleDateString(undefined, { weekday: "long" })} · today
+              </span>
+              <span className="font-display text-lg leading-tight">
+                {todayDinnerName ?? "Plan tonight's dinner"}
+              </span>
+            </span>
+          </span>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-primary-foreground/15">
+            {todayDinnerName ? "Edit" : "Plan"}
+          </span>
+        </button>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <SummaryStat label="Cooked" value={summary.cook} accent="var(--cook)" />
           <SummaryStat label="Takeout" value={summary.takeout} accent="var(--takeout)" />
           <SummaryStat
