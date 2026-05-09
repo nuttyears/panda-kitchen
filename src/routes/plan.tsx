@@ -30,12 +30,38 @@ export const Route = createFileRoute("/plan")({
   component: PlannerPage,
 });
 
-const SLOTS: { key: SlotKey; label: string; Icon: typeof ChefHat }[] = [
-  { key: "lunch", label: "School lunch", Icon: UtensilsCrossed },
-  { key: "dinner", label: "Dinner", Icon: ChefHat },
-];
+const SLOT_META: Record<SlotKey, { label: string; Icon: typeof ChefHat }> = {
+  dinner: { label: "Dinner", Icon: ChefHat },
+  lunch: { label: "School lunch", Icon: UtensilsCrossed },
+};
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// School lunches are only needed Mon–Fri, and they are prepped the evening before.
+// Returns the slots to render on a given dayIdx of the week (0=Sun..6=Sat),
+// in cooking order: dinner first, then tomorrow's school lunch (if a school day).
+function slotsForDay(dayIdx: number): Array<{
+  key: SlotKey;
+  label: string;
+  Icon: typeof ChefHat;
+  targetDayIdx: number; // dayIdx the meal is *for* (used for planKey)
+}> {
+  const slots: Array<{ key: SlotKey; label: string; Icon: typeof ChefHat; targetDayIdx: number }> = [
+    { key: "dinner", label: "Dinner", Icon: ChefHat, targetDayIdx: dayIdx },
+  ];
+  // Tomorrow's school lunch — only if tomorrow is Mon–Fri (dayIdx 1..5)
+  const tomorrow = dayIdx + 1;
+  if (tomorrow >= 1 && tomorrow <= 5) {
+    slots.push({
+      key: "lunch",
+      label: `${DAY_NAMES[tomorrow]} school lunch`,
+      Icon: UtensilsCrossed,
+      targetDayIdx: tomorrow,
+    });
+  }
+  return slots;
+}
 
 function PlannerPage() {
   useHydrate();
