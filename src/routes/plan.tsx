@@ -164,25 +164,27 @@ function PlannerPage() {
           </div>
         </div>
 
-        <button
-          onClick={planTodayDinner}
-          className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-primary text-primary-foreground px-4 py-3.5 shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
-        >
-          <span className="flex items-center gap-2.5">
-            <CalendarCheck className="h-5 w-5" />
-            <span className="text-left">
-              <span className="block text-[10px] uppercase tracking-wider opacity-80">
-                {todayDate.toLocaleDateString(undefined, { weekday: "long" })} · today
-              </span>
-              <span className="font-display text-lg leading-tight">
-                {todayDinnerName ?? "Plan tonight's dinner"}
+        {mounted && (
+          <button
+            onClick={planTodayDinner}
+            className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-primary text-primary-foreground px-4 py-3.5 shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:opacity-95 transition"
+          >
+            <span className="flex items-center gap-2.5">
+              <CalendarCheck className="h-5 w-5" />
+              <span className="text-left">
+                <span className="block text-[10px] uppercase tracking-wider opacity-80">
+                  {todayDate.toLocaleDateString(undefined, { weekday: "long" })} · today
+                </span>
+                <span className="font-display text-lg leading-tight">
+                  {todayDinnerName ?? "Plan tonight's dinner"}
+                </span>
               </span>
             </span>
-          </span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-primary-foreground/15">
-            {todayDinnerName ? "Edit" : "Plan"}
-          </span>
-        </button>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-primary-foreground/15">
+              {todayDinnerName ? "Edit" : "Plan"}
+            </span>
+          </button>
+        )}
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <SummaryStat label="Cooked" value={summary.cook} accent="var(--cook)" />
