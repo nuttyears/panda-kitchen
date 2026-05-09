@@ -21,9 +21,9 @@ import type { MacroTag, SlotKey } from "@/lib/types";
 export const Route = createFileRoute("/plan")({
   head: () => ({
     meta: [
-      { title: "tabletop — Plan the week" },
+      { title: "Plan the week — Panda's Kitchen" },
       { name: "description", content: "Plan family dinners and school lunches without the weeknight scramble." },
-      { property: "og:title", content: "tabletop — Family meal planning" },
+      { property: "og:title", content: "Plan the week — Panda's Kitchen" },
       { property: "og:description", content: "Cook or takeout, kid-approved, balance-aware. One calm weekly plan." },
     ],
   }),
