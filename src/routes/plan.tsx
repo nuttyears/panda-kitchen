@@ -74,35 +74,37 @@ function PlannerPage() {
   const weekStart = useMemo(() => addDays(startOfWeek(), weekOffset * 7), [weekOffset]);
   const [editing, setEditing] = useState<{ key: string; day: string; slot: string } | null>(null);
 
-  // repeat counts per signature within visible week
+  // All planned-meal keys visible in the week (dinner Sun–Sat, lunch Mon–Fri)
+  const visibleKeys = useMemo(() => {
+    const keys: string[] = [];
+    for (let i = 0; i < 7; i++) keys.push(planKey(weekStart, i, "dinner"));
+    for (let i = 1; i <= 5; i++) keys.push(planKey(weekStart, i, "lunch"));
+    return keys;
+  }, [weekStart]);
+
   const sigCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    for (let i = 0; i < 7; i++) {
-      for (const slot of SLOTS) {
-        const m = plan[planKey(weekStart, i, slot.key)];
-        if (!m) continue;
-        const sig = mealSignature(m);
-        counts.set(sig, (counts.get(sig) ?? 0) + 1);
-      }
+    for (const k of visibleKeys) {
+      const m = plan[k];
+      if (!m) continue;
+      counts.set(mealSignature(m), (counts.get(mealSignature(m)) ?? 0) + 1);
     }
     return counts;
-  }, [plan, weekStart]);
+  }, [plan, visibleKeys]);
 
   const summary = useMemo(() => {
     let cook = 0, takeout = 0, balanced = 0, total = 0;
-    for (let i = 0; i < 7; i++) {
-      for (const slot of SLOTS) {
-        const m = plan[planKey(weekStart, i, slot.key)];
-        if (!m) continue;
-        total++;
-        if (m.mode === "cook") cook++;
-        else takeout++;
-        const tags = getMealTags(m, dishes, restaurants);
-        if (tags.has("protein") && tags.has("veggie") && tags.has("fruit")) balanced++;
-      }
+    for (const k of visibleKeys) {
+      const m = plan[k];
+      if (!m) continue;
+      total++;
+      if (m.mode === "cook") cook++;
+      else takeout++;
+      const tags = getMealTags(m, dishes, restaurants);
+      if (tags.has("protein") && tags.has("veggie") && tags.has("fruit")) balanced++;
     }
     return { cook, takeout, balanced, total };
-  }, [plan, weekStart, dishes, restaurants]);
+  }, [plan, visibleKeys, dishes, restaurants]);
 
   const editingMeal = editing ? plan[editing.key] : undefined;
 
