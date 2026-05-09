@@ -38,10 +38,29 @@ export const Route = createFileRoute("/")({
 });
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const SLOTS: { key: SlotKey; label: string; Icon: typeof ChefHat }[] = [
-  { key: "lunch", label: "School lunch", Icon: UtensilsCrossed },
-  { key: "dinner", label: "Dinner", Icon: ChefHat },
-];
+
+// Slots to prep tonight, in cooking order: tonight's dinner first,
+// then tomorrow's school lunch (only if tomorrow is a school day, Mon–Fri).
+function tonightSlots(todayDayOfWeek: number): Array<{
+  key: SlotKey;
+  label: string;
+  Icon: typeof ChefHat;
+  dayOffset: number; // 0 = today, 1 = tomorrow
+}> {
+  const slots: Array<{ key: SlotKey; label: string; Icon: typeof ChefHat; dayOffset: number }> = [
+    { key: "dinner", label: "Tonight's dinner", Icon: ChefHat, dayOffset: 0 },
+  ];
+  const tomorrowDow = (todayDayOfWeek + 1) % 7;
+  if (tomorrowDow >= 1 && tomorrowDow <= 5) {
+    slots.push({
+      key: "lunch",
+      label: `${DAY_NAMES[tomorrowDow]}'s school lunch`,
+      Icon: UtensilsCrossed,
+      dayOffset: 1,
+    });
+  }
+  return slots;
+}
 
 function HomePage() {
   useHydrate();
