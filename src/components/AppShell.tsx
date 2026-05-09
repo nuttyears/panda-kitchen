@@ -1,10 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { CalendarDays, BookOpen, ShoppingBasket, Sparkles } from "lucide-react";
+import { CalendarDays, BookOpen, ShoppingBasket, Sparkles, Home } from "lucide-react";
 import type { ReactNode } from "react";
 import pandaLogo from "@/assets/panda-logo.png";
 
 const navItems = [
-  { to: "/", label: "Plan", icon: CalendarDays },
+  { to: "/", label: "Home", icon: Home },
+  { to: "/plan", label: "Plan", icon: CalendarDays },
   { to: "/library", label: "Library", icon: BookOpen },
   { to: "/grocery", label: "Grocery", icon: ShoppingBasket },
   { to: "/insights", label: "Insights", icon: Sparkles },
