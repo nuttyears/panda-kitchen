@@ -264,7 +264,7 @@ function ShortcutCard({
           color,
         }}
       >
-        <Icon className="h-4.5 w-4.5" />
+        <Icon className="h-5 w-5" />
       </div>
       <div className="mt-3 font-display text-lg leading-tight">{label}</div>
       <div className="text-xs text-muted-foreground mt-0.5">{hint}</div>
