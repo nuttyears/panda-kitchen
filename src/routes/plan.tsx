@@ -200,7 +200,7 @@ function PlannerPage() {
       <div className="space-y-3">
         {Array.from({ length: 7 }).map((_, dayIdx) => {
           const date = addDays(weekStart, dayIdx);
-          const isToday = new Date().toDateString() === date.toDateString();
+          const isToday = mounted && new Date().toDateString() === date.toDateString();
           return (
             <article
               key={dayIdx}
