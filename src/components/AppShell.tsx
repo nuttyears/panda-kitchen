@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { CalendarDays, BookOpen, ShoppingBasket, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import pandaLogo from "@/assets/panda-logo.png";
 
 const navItems = [
   { to: "/", label: "Plan", icon: CalendarDays },
@@ -16,10 +17,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 backdrop-blur-md bg-background/80 border-b border-border/60">
         <div className="mx-auto max-w-2xl px-5 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-primary text-primary-foreground grid place-items-center font-display text-lg">
-              t
-            </div>
-            <span className="font-display text-xl tracking-tight">tabletop</span>
+            <img
+              src={pandaLogo}
+              alt="Panda's Kitchen logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-xl bg-secondary object-contain"
+            />
+            <span className="font-display text-xl tracking-tight">Panda's Kitchen</span>
           </Link>
           <span className="text-xs text-muted-foreground hidden sm:block">
             Family meals, planned with care
