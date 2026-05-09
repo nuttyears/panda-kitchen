@@ -73,6 +73,8 @@ function PlannerPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const weekStart = useMemo(() => addDays(startOfWeek(), weekOffset * 7), [weekOffset]);
   const [editing, setEditing] = useState<{ key: string; day: string; slot: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // All planned-meal keys visible in the week (dinner Sun–Sat, lunch Mon–Fri)
   const visibleKeys = useMemo(() => {
